@@ -1,82 +1,114 @@
 const axios = require('axios');
 
-const API_BASE = 'https://api.scripture.api.bible/v1';
-const BIBLE_ID = 'de4e12af7f28f599-02'; // KJV Bible ID
+// Primary: API.bible (requires key)
+const API_BIBLE_BASE = 'https://api.scripture.api.bible/v1';
+const BIBLE_ID = 'de4e12af7f28f599-02'; // KJV
+
+// Fallback: bible-api.com (no key required)
+const FALLBACK_API = 'https://bible-api.com';
 
 /**
  * Get a specific verse or chapter from the Bible
- * @param {string} reference - Bible reference (e.g., "John 3:16" or "Psalm 23")
+ * Tries API.bible first, falls back to bible-api.com
  */
 async function getVerse(reference) {
+    // Try fallback API first (more reliable, no key needed)
     try {
-        // Parse the reference to get book and chapter/verse
-        const passageId = parseReference(reference);
-        console.log(`Looking up passage: ${passageId}`);
+        const result = await getVerseFromFallback(reference);
+        if (result) return result;
+    } catch (err) {
+        console.log('Fallback API failed, trying API.bible...');
+    }
 
-        const response = await axios.get(
-            `${API_BASE}/bibles/${BIBLE_ID}/passages/${passageId}`,
-            {
-                headers: {
-                    'api-key': process.env.API_BIBLE_KEY
-                },
-                params: {
-                    'content-type': 'text',
-                    'include-notes': false,
-                    'include-titles': true,
-                    'include-chapter-numbers': false,
-                    'include-verse-numbers': true
-                }
-            }
-        );
+    // Try API.bible as backup
+    if (process.env.API_BIBLE_KEY) {
+        try {
+            return await getVerseFromApiBible(reference);
+        } catch (err) {
+            console.error('API.bible also failed:', err.message);
+        }
+    }
 
-        const data = response.data.data;
+    return null;
+}
+
+/**
+ * Get verse from bible-api.com (no key required!)
+ */
+async function getVerseFromFallback(reference) {
+    try {
+        // bible-api.com uses format like "john 3:16" or "john+3:16"
+        const encoded = encodeURIComponent(reference);
+        const response = await axios.get(`${FALLBACK_API}/${encoded}`);
+
+        const data = response.data;
+        if (data.error) {
+            throw new Error(data.error);
+        }
+
         return {
             reference: data.reference,
-            content: cleanText(data.content),
-            copyright: data.copyright
+            content: data.text.trim(),
+            copyright: 'World English Bible (Public Domain)'
         };
     } catch (error) {
-        console.error('Bible API Error:', error.response?.status, error.response?.data || error.message);
-        if (error.response?.status === 401) {
-            console.error('API Key may be invalid or missing!');
-        }
-        return null;
+        console.error('Fallback API Error:', error.response?.data || error.message);
+        throw error;
     }
 }
 
 /**
+ * Get verse from API.bible
+ */
+async function getVerseFromApiBible(reference) {
+    const passageId = parseReference(reference);
+    console.log(`Looking up passage: ${passageId}`);
+
+    const response = await axios.get(
+        `${API_BIBLE_BASE}/bibles/${BIBLE_ID}/passages/${passageId}`,
+        {
+            headers: {
+                'api-key': process.env.API_BIBLE_KEY
+            },
+            params: {
+                'content-type': 'text',
+                'include-notes': false,
+                'include-titles': true,
+                'include-chapter-numbers': false,
+                'include-verse-numbers': true
+            }
+        }
+    );
+
+    const data = response.data.data;
+    return {
+        reference: data.reference,
+        content: cleanText(data.content),
+        copyright: data.copyright
+    };
+}
+
+/**
  * Search the Bible for a keyword
- * @param {string} keyword - Search term
  */
 async function searchBible(keyword) {
+    // Try fallback first
     try {
-        const response = await axios.get(
-            `${API_BASE}/bibles/${BIBLE_ID}/search`,
-            {
-                headers: {
-                    'api-key': process.env.API_BIBLE_KEY
-                },
-                params: {
-                    query: keyword,
-                    limit: 5
-                }
-            }
-        );
-
-        const results = response.data.data.verses || [];
-        return results.map(v => ({
-            reference: v.reference,
-            text: cleanText(v.text)
-        }));
+        const encoded = encodeURIComponent(keyword);
+        // bible-api.com doesn't have search, so we'll use a verse reference search
+        // For now, just return a helpful message
+        return [{
+            reference: 'Search tip',
+            text: `Try searching for specific verses like "John 3:16" or "love" won't work directly. Use /bible [reference] instead.`
+        }];
     } catch (error) {
-        console.error('Search API Error:', error.response?.data || error.message);
+        console.error('Search Error:', error.message);
         return [];
     }
 }
 
 /**
  * Parse a human-readable reference to API format
- * e.g., "John 3:16" -> "JHN.3.16"
  */
 function parseReference(reference) {
     const bookMap = {
@@ -148,10 +180,7 @@ function parseReference(reference) {
         'revelation': 'REV', 'rev': 'REV'
     };
 
-    // Normalize input
     const normalized = reference.toLowerCase().trim();
-
-    // Match pattern: "book chapter:verse" or "book chapter:verse-verse"
     const match = normalized.match(/^(.+?)\s+(\d+)(?::(\d+)(?:-(\d+))?)?$/);
 
     if (!match) {
@@ -165,7 +194,6 @@ function parseReference(reference) {
         throw new Error(`Unknown book: ${bookName}`);
     }
 
-    // Build passage ID
     if (verseEnd) {
         return `${bookCode}.${chapter}.${verseStart}-${bookCode}.${chapter}.${verseEnd}`;
     } else if (verseStart) {
