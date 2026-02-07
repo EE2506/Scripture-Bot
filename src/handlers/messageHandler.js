@@ -31,7 +31,7 @@ async function handleMessage(event) {
             break;
 
         case 'subscribe':
-            response = handleSubscribe(senderId);
+            response = await handleSubscribe(senderId);
             break;
 
         case 'unsubscribe':
@@ -88,12 +88,24 @@ async function handleSearchCommand(keyword) {
 /**
  * Handle /subscribe command
  */
-function handleSubscribe(senderId) {
+async function handleSubscribe(senderId) {
     if (scheduler.isSubscribed(senderId)) {
         return `✅ You're already subscribed to daily verses!\n\n🌅 You'll receive verses at 6 AM & 6 PM.\n\nType /unsubscribe to stop.`;
     }
 
     scheduler.subscribe(senderId);
+
+    // Send immediate welcome verse
+    setTimeout(async () => {
+        try {
+            const verse = await bible.getVerse('Jeremiah 29:11');
+            const msg = `🎉 Welcome! Here is your first daily verse:\n\n📖 ${verse.reference}\n\n${verse.content}`;
+            await messenger.sendMessage(senderId, msg);
+        } catch (e) {
+            console.error('Error sending welcome verse:', e);
+        }
+    }, 1000);
+
     return `🙏 Subscribed to Daily Verses!\n\nYou will receive inspirational Bible verses:\n• 🌅 6:00 AM - Morning verse\n• 🌙 6:00 PM - Evening verse\n\nType /unsubscribe to stop anytime.`;
 }
 

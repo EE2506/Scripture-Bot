@@ -135,10 +135,8 @@ async function sendDailyVerseToAll() {
  * Timezone: Asia/Manila (UTC+8) - adjust if needed
  */
 function initScheduler() {
-    // 6:00 AM daily (Philippine Time = UTC+8)
-    // Cron format: minute hour day month weekday
-    // For UTC server: 6 AM PHT = 10 PM UTC previous day (22:00)
-    cron.schedule('0 22 * * *', () => {
+    // 6:00 AM daily (Philippine Time)
+    cron.schedule('0 6 * * *', () => {
         console.log('⏰ 6 AM - Sending morning verse...');
         sendDailyVerseToAll();
     }, {
@@ -146,8 +144,7 @@ function initScheduler() {
     });
 
     // 6:00 PM daily (Philippine Time)
-    // 6 PM PHT = 10 AM UTC
-    cron.schedule('0 10 * * *', () => {
+    cron.schedule('0 18 * * *', () => {
         console.log('⏰ 6 PM - Sending evening verse...');
         sendDailyVerseToAll();
     }, {
