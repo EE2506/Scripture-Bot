@@ -4,12 +4,14 @@ const axios = require('axios');
 const API_BIBLE_BASE = 'https://api.scripture.api.bible/v1';
 const BIBLE_ID = 'de4e12af7f28f599-02'; // KJV
 
-// Fallback: bible-api.com (no key required)
+// Fallback Verse: bible-api.com (no key required)
 const FALLBACK_API = 'https://bible-api.com';
+
+// Fallback Search: Bolls Life API (no key required)
+const BOLLS_LIFE_SEARCH = 'https://bolls.life/find/KJV/';
 
 /**
  * Get a specific verse or chapter from the Bible
- * Tries API.bible first, falls back to bible-api.com
  */
 async function getVerse(reference) {
     // Try fallback API first (more reliable, no key needed)
@@ -37,7 +39,6 @@ async function getVerse(reference) {
  */
 async function getVerseFromFallback(reference) {
     try {
-        // bible-api.com uses format like "john 3:16" or "john+3:16"
         const encoded = encodeURIComponent(reference);
         const response = await axios.get(`${FALLBACK_API}/${encoded}`);
 
@@ -92,19 +93,52 @@ async function getVerseFromApiBible(reference) {
  * Search the Bible for a keyword
  */
 async function searchBible(keyword) {
-    // Try fallback first
     try {
-        const encoded = encodeURIComponent(keyword);
-        // bible-api.com doesn't have search, so we'll use a verse reference search
-        // For now, just return a helpful message
-        return [{
-            reference: 'Search tip',
-            text: `Try searching for specific verses like "John 3:16" or "love" won't work directly. Use /bible [reference] instead.`
-        }];
+        console.log(`🔍 Searching for: ${keyword}`);
+        const response = await axios.get(BOLLS_LIFE_SEARCH, {
+            params: { search: keyword }
+        });
+
+        const results = response.data;
+
+        if (!results || results.length === 0) {
+            return [];
+        }
+
+        // Map first 5 results
+        return results.slice(0, 5).map(item => ({
+            reference: `${getBookName(item.book)} ${item.chapter}:${item.verse}`,
+            text: cleanText(item.text)
+        }));
+
     } catch (error) {
         console.error('Search Error:', error.message);
         return [];
     }
+}
+
+/**
+ * Map Bolls Life book ID to name
+ */
+function getBookName(bookId) {
+    const books = {
+        1: "Genesis", 2: "Exodus", 3: "Leviticus", 4: "Numbers", 5: "Deuteronomy",
+        6: "Joshua", 7: "Judges", 8: "Ruth", 9: "1 Samuel", 10: "2 Samuel",
+        11: "1 Kings", 12: "2 Kings", 13: "1 Chronicles", 14: "2 Chronicles",
+        15: "Ezra", 16: "Nehemiah", 17: "Esther", 18: "Job", 19: "Psalms",
+        20: "Proverbs", 21: "Ecclesiastes", 22: "Song of Solomon", 23: "Isaiah",
+        24: "Jeremiah", 25: "Lamentations", 26: "Ezekiel", 27: "Daniel",
+        28: "Hosea", 29: "Joel", 30: "Amos", 31: "Obadiah", 32: "Jonah",
+        33: "Micah", 34: "Nahum", 35: "Habakkuk", 36: "Zephaniah", 37: "Haggai",
+        38: "Zechariah", 39: "Malachi", 40: "Matthew", 41: "Mark", 42: "Luke",
+        43: "John", 44: "Acts", 45: "Romans", 46: "1 Corinthians",
+        47: "2 Corinthians", 48: "Galatians", 49: "Ephesians", 50: "Philippians",
+        51: "Colossians", 52: "1 Thessalonians", 53: "2 Thessalonians",
+        54: "1 Timothy", 55: "2 Timothy", 56: "Titus", 57: "Philemon",
+        58: "Hebrews", 59: "James", 60: "1 Peter", 61: "2 Peter", 62: "1 John",
+        63: "2 John", 64: "3 John", 65: "Jude", 66: "Revelation"
+    };
+    return books[bookId] || "Unknown Book";
 }
 
 /**
