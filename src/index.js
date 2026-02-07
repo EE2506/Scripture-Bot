@@ -9,9 +9,14 @@ const PORT = process.env.PORT || 3000;
 
 app.use(bodyParser.json());
 
-// Health check
+const path = require('path');
+
+// Serve static files from public directory
+app.use(express.static(path.join(__dirname, '../public')));
+
+// Health check / Landing Page
 app.get('/', (req, res) => {
-  res.send('🙏 ScriptureBot is running!');
+  res.sendFile(path.join(__dirname, '../public/index.html'));
 });
 
 // Webhook verification (GET) - Meta sends this to verify your endpoint
