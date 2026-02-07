@@ -154,11 +154,33 @@ function initScheduler() {
     console.log('📅 Daily verse scheduler initialized! (6 AM & 6 PM Philippine Time)');
 }
 
+/**
+ * Send a daily verse to a single user (for testing)
+ */
+async function sendDailyVerseToUser(userId) {
+    const verseRef = getRandomVerseReference();
+    console.log(`📖 Sending test verse: ${verseRef} to ${userId}`);
+
+    try {
+        const verse = await bible.getVerse(verseRef);
+        if (!verse) {
+            return false;
+        }
+
+        const message = `🌅 Daily Verse (Test)\n\n📖 ${verse.reference}\n\n${verse.content}\n\n🙏 Have a blessed day!`;
+        return await sendMessageToUser(userId, message);
+    } catch (error) {
+        console.error('Error sending test verse:', error.message);
+        return false;
+    }
+}
+
 module.exports = {
     subscribe,
     unsubscribe,
     isSubscribed,
     initScheduler,
     sendDailyVerseToAll,
+    sendDailyVerseToUser,
     getSubscriberCount: () => subscribers.size
 };

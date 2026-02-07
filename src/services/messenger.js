@@ -56,8 +56,9 @@ function parseCommand(text) {
     }
 
     // Check for /subscribe command
-    if (trimmed.toLowerCase() === '/subscribe') {
-        return { command: 'subscribe', args: '' };
+    const subscribeMatch = trimmed.match(/^\/subscribe\s*(.*)$/i);
+    if (subscribeMatch) {
+        return { command: 'subscribe', args: subscribeMatch[1].trim() };
     }
 
     // Check for /unsubscribe command

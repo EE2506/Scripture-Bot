@@ -31,7 +31,7 @@ async function handleMessage(event) {
             break;
 
         case 'subscribe':
-            response = await handleSubscribe(senderId);
+            response = await handleSubscribe(senderId, parsed.args);
             break;
 
         case 'unsubscribe':
@@ -88,7 +88,17 @@ async function handleSearchCommand(keyword) {
 /**
  * Handle /subscribe command
  */
-async function handleSubscribe(senderId) {
+async function handleSubscribe(senderId, args) {
+    // Check for test command
+    if (args && args.toLowerCase() === 'test') {
+        const success = await scheduler.sendDailyVerseToUser(senderId);
+        if (success) {
+            return '✅ Test successful! Sent a daily verse to your inbox.';
+        } else {
+            return '❌ Test failed. Could not fetch verse.';
+        }
+    }
+
     if (scheduler.isSubscribed(senderId)) {
         return `✅ You're already subscribed to daily verses!\n\n🌅 You'll receive verses at 6 AM & 6 PM.\n\nType /unsubscribe to stop.`;
     }
