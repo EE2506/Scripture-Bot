@@ -1,5 +1,6 @@
 const bible = require('../services/bible');
 const messenger = require('../services/messenger');
+const scheduler = require('../services/scheduler');
 
 /**
  * Handle incoming Messenger messages
@@ -27,6 +28,14 @@ async function handleMessage(event) {
 
         case 'search':
             response = await handleSearchCommand(parsed.args);
+            break;
+
+        case 'subscribe':
+            response = handleSubscribe(senderId);
+            break;
+
+        case 'unsubscribe':
+            response = handleUnsubscribe(senderId);
             break;
 
         case 'help':
@@ -77,6 +86,30 @@ async function handleSearchCommand(keyword) {
 }
 
 /**
+ * Handle /subscribe command
+ */
+function handleSubscribe(senderId) {
+    if (scheduler.isSubscribed(senderId)) {
+        return `✅ You're already subscribed to daily verses!\n\n🌅 You'll receive verses at 6 AM & 6 PM.\n\nType /unsubscribe to stop.`;
+    }
+
+    scheduler.subscribe(senderId);
+    return `🙏 Subscribed to Daily Verses!\n\nYou will receive inspirational Bible verses:\n• 🌅 6:00 AM - Morning verse\n• 🌙 6:00 PM - Evening verse\n\nType /unsubscribe to stop anytime.`;
+}
+
+/**
+ * Handle /unsubscribe command
+ */
+function handleUnsubscribe(senderId) {
+    if (!scheduler.isSubscribed(senderId)) {
+        return `📭 You're not subscribed to daily verses.\n\nType /subscribe to start receiving them!`;
+    }
+
+    scheduler.unsubscribe(senderId);
+    return `📭 Unsubscribed from daily verses.\n\nYou won't receive automated verses anymore.\n\nType /subscribe to re-subscribe anytime!`;
+}
+
+/**
  * Get help message
  */
 function getHelpMessage() {
@@ -91,12 +124,14 @@ function getHelpMessage() {
 
 /search [keyword]
   Search for verses containing a word
-  Examples:
-  • /search love
-  • /search faith
-  • /search hope
 
-Powered by API.bible 🙏`;
+/subscribe
+  🌅 Get daily verses at 6 AM & 6 PM
+
+/unsubscribe
+  Stop receiving daily verses
+
+🙏 Powered by ScriptureBot`;
 }
 
 module.exports = { handleMessage };

@@ -2,6 +2,7 @@ require('dotenv').config();
 const express = require('express');
 const bodyParser = require('body-parser');
 const messageHandler = require('./handlers/messageHandler');
+const scheduler = require('./services/scheduler');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -36,7 +37,7 @@ app.post('/webhook', async (req, res) => {
     // Process each entry
     for (const entry of body.entry) {
       const event = entry.messaging[0];
-      
+
       if (event.message && event.message.text) {
         await messageHandler.handleMessage(event);
       }
@@ -50,4 +51,8 @@ app.post('/webhook', async (req, res) => {
 app.listen(PORT, () => {
   console.log(`🚀 ScriptureBot server running on port ${PORT}`);
   console.log(`📖 Ready to serve the Word!`);
+
+  // Initialize daily verse scheduler
+  scheduler.initScheduler();
 });
+

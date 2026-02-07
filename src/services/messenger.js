@@ -55,6 +55,16 @@ function parseCommand(text) {
         return { command: 'search', args: searchMatch[1].trim() };
     }
 
+    // Check for /subscribe command
+    if (trimmed.toLowerCase() === '/subscribe') {
+        return { command: 'subscribe', args: '' };
+    }
+
+    // Check for /unsubscribe command
+    if (trimmed.toLowerCase() === '/unsubscribe') {
+        return { command: 'unsubscribe', args: '' };
+    }
+
     // Check for /help command
     if (trimmed.toLowerCase() === '/help') {
         return { command: 'help', args: '' };
