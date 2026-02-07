@@ -242,8 +242,10 @@ function parseReference(reference) {
  */
 function cleanText(text) {
     return text
-        .replace(/<[^>]*>/g, '')
-        .replace(/\s+/g, ' ')
+        .replace(/<S>.*?<\/S>/g, '')   // Remove Strong's numbers (e.g. <S>1234</S>)
+        .replace(/<sup>.*?<\/sup>/g, '') // Remove footnotes (e.g. <sup>...</sup>)
+        .replace(/<[^>]*>/g, '')       // Remove remaining HTML tags (keep content)
+        .replace(/\s+/g, ' ')          // Normalize whitespace
         .trim();
 }
 
