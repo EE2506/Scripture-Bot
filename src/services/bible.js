@@ -11,6 +11,7 @@ async function getVerse(reference) {
     try {
         // Parse the reference to get book and chapter/verse
         const passageId = parseReference(reference);
+        console.log(`Looking up passage: ${passageId}`);
 
         const response = await axios.get(
             `${API_BASE}/bibles/${BIBLE_ID}/passages/${passageId}`,
@@ -35,7 +36,10 @@ async function getVerse(reference) {
             copyright: data.copyright
         };
     } catch (error) {
-        console.error('Bible API Error:', error.response?.data || error.message);
+        console.error('Bible API Error:', error.response?.status, error.response?.data || error.message);
+        if (error.response?.status === 401) {
+            console.error('API Key may be invalid or missing!');
+        }
         return null;
     }
 }
