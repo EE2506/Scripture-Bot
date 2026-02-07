@@ -30,6 +30,10 @@ async function handleMessage(event) {
             response = await handleSearchCommand(parsed.args);
             break;
 
+        case 'post':
+            response = await handlePostCommand(senderId, parsed.args);
+            break;
+
         case 'subscribe':
             response = await handleSubscribe(senderId, parsed.args);
             break;
@@ -83,6 +87,22 @@ async function handleSearchCommand(keyword) {
     }
 
     return response.trim();
+}
+
+/**
+ * Handle /post command (Admin only - for testing)
+ */
+async function handlePostCommand(senderId, args) {
+    if (args && args.toLowerCase() === 'test') {
+        // Trigger manual page post
+        const result = await scheduler.postVerseToPage();
+        if (result) {
+            return '✅ Successfully posted a verse to the Page Feed!';
+        } else {
+            return '❌ Failed to post to Page. Check logs/permissions.';
+        }
+    }
+    return 'Usage: /post test';
 }
 
 /**

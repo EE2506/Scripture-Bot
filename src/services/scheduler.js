@@ -1,6 +1,7 @@
 const cron = require('node-cron');
 const axios = require('axios');
 const bible = require('./bible');
+const pageService = require('./pageService');
 
 const GRAPH_API = 'https://graph.facebook.com/v18.0';
 
@@ -151,7 +152,16 @@ function initScheduler() {
         timezone: 'Asia/Manila'
     });
 
+    // Hourly Page Post (Every hour at minute 0)
+    cron.schedule('0 * * * *', () => {
+        console.log('⏰ Hourly - Posting to Facebook Page...');
+        pageService.postVerseToPage();
+    }, {
+        timezone: 'Asia/Manila'
+    });
+
     console.log('📅 Daily verse scheduler initialized! (6 AM & 6 PM Philippine Time)');
+    console.log('📅 Hourly Page Post scheduler initialized!');
 }
 
 /**
@@ -182,5 +192,6 @@ module.exports = {
     initScheduler,
     sendDailyVerseToAll,
     sendDailyVerseToUser,
+    postVerseToPage: pageService.postVerseToPage, // Export for manual testing
     getSubscriberCount: () => subscribers.size
 };

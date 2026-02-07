@@ -61,6 +61,12 @@ function parseCommand(text) {
         return { command: 'subscribe', args: subscribeMatch[1].trim() };
     }
 
+    // Check for /post command (Admin/Test)
+    const postMatch = trimmed.match(/^\/post\s*(.*)$/i);
+    if (postMatch) {
+        return { command: 'post', args: postMatch[1].trim() };
+    }
+
     // Check for /unsubscribe command
     if (trimmed.toLowerCase() === '/unsubscribe') {
         return { command: 'unsubscribe', args: '' };
